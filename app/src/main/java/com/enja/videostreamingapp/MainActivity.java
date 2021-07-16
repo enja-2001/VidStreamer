@@ -5,37 +5,39 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ProgressBar;
 
-import com.google.android.exoplayer2.DefaultLoadControl;
+import com.enja.videostreamingapp.Callbacks.ResponseCallback;
+import com.enja.videostreamingapp.Listeners.OnSwipeListener;
+import com.enja.videostreamingapp.Models.CustomOutput;
+import com.enja.videostreamingapp.Models.single_msg;
+import com.enja.videostreamingapp.Network.Response;
 
-import com.google.android.exoplayer2.LoadControl;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
-import com.google.android.exoplayer2.extractor.ExtractorsFactory;
-import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.source.dash.DashMediaSource;
-import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
-import com.google.android.exoplayer2.source.hls.HlsMediaSource;
-import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.TrackSelection;
-import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.ui.PlayerView;
-import com.google.android.exoplayer2.upstream.BandwidthMeter;
-import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     PlayerView playerView;
     ProgressBar progressBar;
     SimpleExoPlayer simpleExoPlayer;
+    String userAgent;
+    ProgressiveMediaSource.Factory factory;
+    GestureDetector gestureDetector;
+    ArrayList<single_msg> al;
+    int position;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,41 +46,92 @@ public class MainActivity extends AppCompatActivity {
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        init();
-        initializePlayer();
+        initViews();
+        initPlayer();
+        initSwipeListener();
     }
 
-    private void init(){
+    private void initViews(){
         playerView=findViewById(R.id.playerView);
         progressBar=findViewById(R.id.progressBar);
     }
 
-    private void initializePlayer() {
-        Uri videoUri = Uri.parse("http://ak-ind-cdn.snackvideo.in/upic/2021/03/09/14/BMjAyMTAzMDkxNDEzMzhfMTUwMDAwNTA0NzAxODE3XzE1MDAwMTIzNjc5MTk0Nl8wXzM=_b_B39ea1dc9a84778c3301cdd9fdb62fc80.mp4?tag=1-1618597049-s-0-t8ie3aggzf-797c984891af85f7");
-
+    private void initPlayer() {
         simpleExoPlayer = new SimpleExoPlayer.Builder(MainActivity.this).build();
+        simpleExoPlayer.getPlayWhenReady();
 
         simpleExoPlayer.addListener(new Player.EventListener(){
             @Override
             public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-                if(playbackState == Player.STATE_BUFFERING){
+                if(playbackState == Player.STATE_BUFFERING)
                     progressBar.setVisibility(View.VISIBLE);
-                }
-                else if(playbackState == Player.STATE_READY){
+
+                else if(playbackState == Player.STATE_READY)
                     progressBar.setVisibility(View.GONE);
+
+                else if(playbackState == Player.STATE_ENDED){
+                    simpleExoPlayer.seekTo(0);
+                    simpleExoPlayer.getPlayWhenReady();
                 }
             }
         });
 
-
-        String userAgent = Util.getUserAgent(playerView.getContext(),playerView.getContext().getString(R.string.app_name));
-        MediaSource mediaSource = new ProgressiveMediaSource.Factory(new DefaultHttpDataSourceFactory(userAgent),
-                new DefaultExtractorsFactory()).createMediaSource(videoUri);
+        userAgent = Util.getUserAgent(playerView.getContext(),playerView.getContext().getString(R.string.app_name));
+        factory = new ProgressiveMediaSource.Factory(new DefaultHttpDataSourceFactory(userAgent),
+                new DefaultExtractorsFactory());
 
         playerView.setPlayer(simpleExoPlayer);
+        playerView.setOnTouchListener(MainActivity.this);
         playerView.setKeepScreenOn(true);
+        playerView.hideController();
+
+
+        getResponse();
+    }
+
+    private void preparePlayer(int pos){
+
+        if(pos<0 || pos>=al.size())
+            pos=0;
+
+        Uri videoUri = Uri.parse(al.get(pos).getVideo());
+        MediaSource mediaSource = factory.createMediaSource(videoUri);
         simpleExoPlayer.prepare(mediaSource);
-        simpleExoPlayer.getPlayWhenReady();
+    }
+
+    private void getResponse(){
+        position=0;
+        Response ob=new Response();
+
+        ob.getResponse(customOutput -> {
+            al = customOutput.getMsg();
+            preparePlayer(position);
+            simpleExoPlayer.getPlayWhenReady();
+        });
+    }
+
+    private void initSwipeListener() {
+        gestureDetector = new GestureDetector(this,new OnSwipeListener(){
+            @Override
+            public boolean onSwipe(Direction direction) {
+                if(direction == Direction.up){
+                    Log.d("swipe","up");
+                    position++;
+                }
+                else if(direction == Direction.down){
+                    Log.d("swipe","down");
+                    position--;
+                }
+                preparePlayer(position);
+                return true;
+            }
+        });
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        gestureDetector.onTouchEvent(event);
+        return true;
     }
 
     @Override
