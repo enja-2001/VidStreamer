@@ -2,7 +2,9 @@ package com.enja.videostreamingapp.Models;
 
 import com.google.gson.annotations.Expose;
 
-public class single_msg{
+import java.io.Serializable;
+
+public class single_msg implements Serializable {
     @Expose
     public String video;
 

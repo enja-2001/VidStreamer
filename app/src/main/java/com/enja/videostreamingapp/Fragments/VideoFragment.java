@@ -1,21 +1,26 @@
-package com.enja.videostreamingapp;
+package com.enja.videostreamingapp.Fragments;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
+
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
+import com.enja.videostreamingapp.Adapters.VideoViewPagerAdapter;
 import com.enja.videostreamingapp.Listeners.OnSwipeListener;
+import com.enja.videostreamingapp.MainActivity;
 import com.enja.videostreamingapp.Models.CacheSingleton;
 import com.enja.videostreamingapp.Models.single_msg;
 import com.enja.videostreamingapp.Network.Response;
-
+import com.enja.videostreamingapp.R;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
@@ -36,7 +41,7 @@ import com.google.android.exoplayer2.util.Util;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
+public class VideoFragment extends Fragment {
 
     PlayerView playerView;
     ProgressBar progressBar;
@@ -47,38 +52,57 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     DefaultDataSourceFactory defaultDataSourceFactory;
     SimpleCache simpleCache;
 
-    GestureDetector gestureDetector;
+    ArrayList<single_msg> al;
 
     int position;
     private final long cacheSize = 1 * 1024 * 1024;     // cacheSize = 1 MB
 
-    ArrayList<single_msg> al;
+    //create instance of fragment
+    public static VideoFragment newInstance( ArrayList<single_msg> al,int position) {
+        VideoFragment fragment = new VideoFragment();
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        Bundle args = new Bundle();
+        args.putSerializable("ArrayList_single_msg", al);
+        args.putInt("Position", position);
+        fragment.setArguments(args);
 
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
-        initViews();
-        initPlayer();
-        initMediaSources();
-        initSwipeListener();
-        getResponse();
+        return fragment;
     }
 
-    private void initViews() {
-        playerView = findViewById(R.id.playerView);
-        playerView.setOnTouchListener(MainActivity.this);
+    // initialize instance variables from the bundle
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        al=(ArrayList<single_msg>)getArguments().getSerializable("ArrayList_single_msg");
+        position=getArguments().getInt("Position");
+    }
+
+    //inflate the view
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View view = inflater.inflate(R.layout.fragment_video, container, false);
+
+        initViews(view);
+        initPlayer();
+        initMediaSources();
+        preparePlayer(position);
+
+        return view;
+    }
+
+    private void initViews(View view) {
+        playerView = view.findViewById(R.id.playerView);
         playerView.setKeepScreenOn(true);
 
-        progressBar = findViewById(R.id.progressBar);
+        progressBar = view.findViewById(R.id.progressBar);
         progressBar.setVisibility(View.GONE);
     }
 
     private void initPlayer() {
-        simpleExoPlayer = new SimpleExoPlayer.Builder(MainActivity.this).build();
+        simpleExoPlayer = new SimpleExoPlayer.Builder(getContext()).build();
         simpleExoPlayer.getPlayWhenReady();
         Player.Listener playerListener = getPlayerListener();
         simpleExoPlayer.addListener(playerListener);
@@ -98,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         LeastRecentlyUsedCacheEvictor leastRecentlyUsedCacheEvictor = new LeastRecentlyUsedCacheEvictor(cacheSize);
 
         //get SimpleCache instance
-        simpleCache = CacheSingleton.getInstance(this,leastRecentlyUsedCacheEvictor);
+        simpleCache = CacheSingleton.getInstance(getContext(),leastRecentlyUsedCacheEvictor);
 
         //initialize CacheDataSource.Factory
         CacheDataSource.Factory cacheDataSourceFactory = new CacheDataSource.Factory();
@@ -108,20 +132,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         cacheDataSourceFactory.setUpstreamDataSourceFactory(defaultHttpDataSourceFactory);
 
         //wrap the cacheDataSourceFactory within defaultDataSourceFactory
-        defaultDataSourceFactory = new DefaultDataSourceFactory(this,cacheDataSourceFactory);
+        defaultDataSourceFactory = new DefaultDataSourceFactory(getContext(),cacheDataSourceFactory);
 
         //initialize ProgressiveMediaSource.Factory
         factory = new ProgressiveMediaSource.Factory(defaultDataSourceFactory, new DefaultExtractorsFactory());
-    }
-
-    private void getResponse(){
-        position=0;
-        Response ob=new Response();
-
-        ob.getResponse(customOutput -> {
-            al = customOutput.getMsg();
-            preparePlayer(position);
-        });
     }
 
     private void preparePlayer(int pos){
@@ -165,10 +179,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            };
-            Thread thread = new Thread(runnable);
-            thread.start();
-        }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
+    }
 
     private Player.Listener getPlayerListener(){
         return new Player.Listener() {
@@ -183,53 +197,21 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 else if(state == Player.STATE_ENDED) {
                     simpleExoPlayer.seekTo(0);
                     simpleExoPlayer.getPlayWhenReady();
-                    playerView.hideController();
                 }
             }
         };
     }
 
-    private void initSwipeListener() {
-        gestureDetector = new GestureDetector(this,new OnSwipeListener(){
-            @Override
-            public boolean onSwipe(Direction direction) {
-                if(direction == Direction.up){
-                    Log.d("swipe","up");
-                    position++;
-                }
-                else if(direction == Direction.down){
-                    Log.d("swipe","down");
-                    position--;
-                }
-                preparePlayer(position);
-                return true;
-            }
-        });
-    }
-
     @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        gestureDetector.onTouchEvent(event);
-        return true;
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if(hasFocus)
-            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE);
-    }
-
-    @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
         simpleExoPlayer.setPlayWhenReady(false);
         simpleExoPlayer.getPlaybackState();
     }
 
     @Override
-    protected void onRestart() {
-        super.onRestart();
+    public void onResume() {
+        super.onResume();
         simpleExoPlayer.setPlayWhenReady(true);
         simpleExoPlayer.getPlaybackState();
     }
