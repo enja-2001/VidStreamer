@@ -104,8 +104,7 @@ public class VideoFragment extends Fragment {
     private void initPlayer() {
         simpleExoPlayer = new SimpleExoPlayer.Builder(getContext()).build();
         simpleExoPlayer.getPlayWhenReady();
-        Player.Listener playerListener = getPlayerListener();
-        simpleExoPlayer.addListener(playerListener);
+        simpleExoPlayer.addListener(getPlayerListener());
 
         playerView.setPlayer(simpleExoPlayer);
     }
@@ -145,7 +144,9 @@ public class VideoFragment extends Fragment {
         Uri videoUri = Uri.parse(al.get(pos).getVideo());
         MediaItem mediaItem = MediaItem.fromUri(videoUri);
         MediaSource mediaSource = factory.createMediaSource(mediaItem);
+
         simpleExoPlayer.setMediaSource(mediaSource);
+        simpleExoPlayer.prepare();     //for autoplay
 
         //for caching the next video
         int nextPos = pos+1>=al.size() ? 0 : pos+1;
