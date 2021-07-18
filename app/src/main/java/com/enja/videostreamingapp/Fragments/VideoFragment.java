@@ -7,19 +7,13 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
-import com.enja.videostreamingapp.Adapters.VideoViewPagerAdapter;
-import com.enja.videostreamingapp.Listeners.OnSwipeListener;
-import com.enja.videostreamingapp.MainActivity;
 import com.enja.videostreamingapp.Models.CacheSingleton;
 import com.enja.videostreamingapp.Models.single_msg;
-import com.enja.videostreamingapp.Network.Response;
 import com.enja.videostreamingapp.R;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
@@ -27,8 +21,14 @@ import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
+import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DataSpec;
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 import com.google.android.exoplayer2.upstream.FileDataSource;
@@ -37,9 +37,16 @@ import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
 import com.google.android.exoplayer2.upstream.cache.CacheWriter;
 import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor;
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
+import com.google.android.exoplayer2.util.Clock;
 import com.google.android.exoplayer2.util.Util;
 
 import java.util.ArrayList;
+
+import static com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection.DEFAULT_BANDWIDTH_FRACTION;
+import static com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection.DEFAULT_BUFFERED_FRACTION_TO_LIVE_EDGE_FOR_QUALITY_INCREASE;
+import static com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection.DEFAULT_MAX_DURATION_FOR_QUALITY_DECREASE_MS;
+import static com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection.DEFAULT_MIN_DURATION_FOR_QUALITY_INCREASE_MS;
+import static com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection.DEFAULT_MIN_DURATION_TO_RETAIN_AFTER_DISCARD_MS;
 
 public class VideoFragment extends Fragment {
 
@@ -50,6 +57,8 @@ public class VideoFragment extends Fragment {
     SimpleExoPlayer simpleExoPlayer;
     ProgressiveMediaSource.Factory factory;
     DefaultDataSourceFactory defaultDataSourceFactory;
+    BandwidthMeter bandwidthMeter;
+    TrackSelector trackSelector;
     SimpleCache simpleCache;
 
     ArrayList<single_msg> al;
@@ -101,8 +110,24 @@ public class VideoFragment extends Fragment {
         progressBar.setVisibility(View.GONE);
     }
 
+    private void initTrackSelectorAndBandwidth(){
+        bandwidthMeter = new DefaultBandwidthMeter.Builder(getContext()).build();
+        AdaptiveTrackSelection.Factory adaptiveTrackSelectionFactory = new AdaptiveTrackSelection.Factory(DEFAULT_MIN_DURATION_FOR_QUALITY_INCREASE_MS,
+                DEFAULT_MAX_DURATION_FOR_QUALITY_DECREASE_MS,
+                DEFAULT_MIN_DURATION_TO_RETAIN_AFTER_DISCARD_MS,
+                DEFAULT_BANDWIDTH_FRACTION,
+                DEFAULT_BUFFERED_FRACTION_TO_LIVE_EDGE_FOR_QUALITY_INCREASE,
+                Clock.DEFAULT);
+        trackSelector = new DefaultTrackSelector(getContext(),adaptiveTrackSelectionFactory);
+    }
     private void initPlayer() {
-        simpleExoPlayer = new SimpleExoPlayer.Builder(getContext()).build();
+        initTrackSelectorAndBandwidth();
+
+        simpleExoPlayer = new SimpleExoPlayer.Builder(getContext())
+                            .setBandwidthMeter(bandwidthMeter)
+                            .setTrackSelector(trackSelector)
+                            .build();
+
         simpleExoPlayer.getPlayWhenReady();
         simpleExoPlayer.addListener(getPlayerListener());
 

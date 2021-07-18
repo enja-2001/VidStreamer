@@ -21,7 +21,6 @@ public class VideoRecyclerView extends FragmentActivity {
     ArrayList<single_msg> al;
     int position;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
