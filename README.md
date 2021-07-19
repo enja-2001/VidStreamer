@@ -1,4 +1,4 @@
-# <div align = "center">VidStream</div>
+# <div align = "center">VidStreamer</div>
 
 <p align="center">
   <img src="/Screenshots/VidStreamer.gif?raw=true" alt="GIF"/>
