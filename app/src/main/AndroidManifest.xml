@@ -12,16 +12,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VIdeoStreamingApp"
         android:usesCleartextTraffic="true">
-        <activity android:name=".Views.VideoRecyclerView">
+        <activity android:name=".Views.VideosActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|layoutDirection">
         </activity>
     </application>
 

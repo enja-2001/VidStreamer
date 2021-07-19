@@ -47,4 +47,14 @@ dependencies {
     //for networking purpose
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.2.0'
+
+    //for progress bar
+    implementation 'com.wang.avi:library:2.1.3'
+
+    //for ripple animations
+    implementation 'com.skyfishjy.ripplebackground:library:1.0.1'
+
+    //for lottie animation
+    def lottieVersion = "3.4.0"
+    implementation "com.airbnb.android:lottie:$lottieVersion"
 }

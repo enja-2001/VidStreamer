@@ -12,19 +12,21 @@ import com.enja.videostreamingapp.Models.single_msg;
 import com.enja.videostreamingapp.Network.Response;
 
 import com.enja.videostreamingapp.R;
+import com.skyfishjy.library.RippleBackground;
 
 import java.util.ArrayList;
 
-public class VideoRecyclerView extends FragmentActivity {
+public class VideosActivity extends FragmentActivity {
 
     ViewPager2 viewPager;
+    RippleBackground rippleBackground;
     ArrayList<single_msg> al;
     int position;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_video_recycler_view);
+        setContentView(R.layout.activity_videos);
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
@@ -35,6 +37,9 @@ public class VideoRecyclerView extends FragmentActivity {
     private void initViews() {
         viewPager = findViewById(R.id.viewPager);
         viewPager.setOffscreenPageLimit(1);     //set page off screen page limit=1 on either side of the current page
+
+        rippleBackground = findViewById(R.id.ripple);
+        rippleBackground.startRippleAnimation();
     }
 
     private void getResponse(){
@@ -45,6 +50,7 @@ public class VideoRecyclerView extends FragmentActivity {
             al = customOutput.getMsg();
             VideoViewPagerAdapter2 videoViewPagerAdapter = new VideoViewPagerAdapter2(this,al);
             viewPager.setAdapter(videoViewPagerAdapter);
+            rippleBackground.stopRippleAnimation();
         });
     }
 

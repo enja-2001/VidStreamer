@@ -5,6 +5,7 @@ import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.viewpager2.widget.ViewPager2;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.enja.videostreamingapp.Models.CacheSingleton;
 import com.enja.videostreamingapp.Models.single_msg;
 import com.enja.videostreamingapp.R;
@@ -39,6 +41,7 @@ import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvicto
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
 import com.google.android.exoplayer2.util.Clock;
 import com.google.android.exoplayer2.util.Util;
+import com.wang.avi.AVLoadingIndicatorView;
 
 import java.util.ArrayList;
 
@@ -51,7 +54,10 @@ import static com.google.android.exoplayer2.trackselection.AdaptiveTrackSelectio
 public class VideoFragment extends Fragment {
 
     PlayerView playerView;
-    ProgressBar progressBar;
+    AVLoadingIndicatorView progressBar;
+    LottieAnimationView lottieLove;
+    LottieAnimationView lottieLike;
+    LottieAnimationView lottieComment;
 
     String userAgent;
     SimpleExoPlayer simpleExoPlayer;
@@ -61,20 +67,19 @@ public class VideoFragment extends Fragment {
     TrackSelector trackSelector;
     SimpleCache simpleCache;
 
+    public static ViewPager2 viewPager;
     ArrayList<single_msg> al;
 
     int position;
     private final long cacheSize = 1 * 1024 * 1024;     // cacheSize = 1 MB
 
     //create instance of fragment
-    public static VideoFragment newInstance( ArrayList<single_msg> al,int position) {
+    public static VideoFragment newInstance(ArrayList<single_msg> al, int position) {
         VideoFragment fragment = new VideoFragment();
-
         Bundle args = new Bundle();
         args.putSerializable("ArrayList_single_msg", al);
         args.putInt("Position", position);
         fragment.setArguments(args);
-
         return fragment;
     }
 
@@ -82,7 +87,6 @@ public class VideoFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         al=(ArrayList<single_msg>)getArguments().getSerializable("ArrayList_single_msg");
         position=getArguments().getInt("Position");
     }
@@ -91,7 +95,7 @@ public class VideoFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+
         View view = inflater.inflate(R.layout.fragment_video, container, false);
 
         initViews(view);
@@ -108,6 +112,15 @@ public class VideoFragment extends Fragment {
 
         progressBar = view.findViewById(R.id.progressBar);
         progressBar.setVisibility(View.GONE);
+
+        lottieLove = view.findViewById(R.id.lottieLove);
+        lottieLove.setOnClickListener(v -> lottieLove.playAnimation());
+
+        lottieLike = view.findViewById(R.id.lottieLike);
+        lottieLike.setOnClickListener(v -> lottieLike.playAnimation());
+
+        lottieComment = view.findViewById(R.id.lottieComment);
+        lottieComment.playAnimation();
     }
 
     private void initTrackSelectorAndBandwidth(){
