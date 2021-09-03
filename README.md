@@ -5,7 +5,7 @@
 </p>
 
 ## :pushpin: Features
-- Pre-fetcheing video data from the server and using the proper caching mechanism to provide an uninterrupted streaming service.
+- Pre-fetching video data from the server and using the proper caching mechanism to provide an uninterrupted streaming service.
 - It makes use of viewpager with fragments to provide smooth scrolling through pages and maintaining the state of each page.
 - Using Exoplayer2 which is a very robust and powerful media player that can easily adapt to the network bandwidth to provide seamless streaming.
 
